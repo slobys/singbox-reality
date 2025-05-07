@@ -4,7 +4,7 @@ echo "=== 安装 sing-box 并配置 Reality + uTLS ==="
 
 # 安装 sing-box
 echo "[1/6] 安装 sing-box..."
-curl -fsSL https://sing-box.sagernet.org/install.sh | bash
+curl -fsSL https://sing-box.app/install.sh | sh
 
 # 生成密钥对
 echo "[2/6] 生成 Reality 密钥对..."
