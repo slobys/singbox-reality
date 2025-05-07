@@ -23,7 +23,7 @@ sudo yum update -y
 ```
 ## 一键脚本
 ```bash
-sudo apt install git -y && git clone https://github.com/slobys/singbox-reality.git && cd npm && chmod +x singbox-reality.sh && ./singbox-reality.sh
+sudo apt install git -y && git clone https://github.com/slobys/singbox-reality.git && cd singbox-reality && chmod +x singbox-reality.sh && ./singbox-reality.sh
 ```
 
   
