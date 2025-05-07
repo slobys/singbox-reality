@@ -1,30 +1,24 @@
 #!/bin/bash
 
-echo "=== 安装 sing-box（从 GitHub Releases 获取最新版）==="
+echo "=== [1/6] 使用官方脚本安装 sing-box ==="
+bash <(curl -fsSL https://sing-box.app/install.sh)
 
-# 1. 下载并安装 sing-box 最新版本
-VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep tag_name | cut -d '"' -f 4)
-wget https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VERSION}-linux-amd64.tar.gz
-tar -xvzf sing-box-${VERSION}-linux-amd64.tar.gz
-cd sing-box-${VERSION}-linux-amd64
-chmod +x sing-box
-mv sing-box /usr/local/bin/
-cd ..
-rm -rf sing-box-${VERSION}-linux-amd64*
+if ! command -v sing-box &> /dev/null; then
+    echo "❌ sing-box 安装失败，终止脚本。"
+    exit 1
+fi
 
-# 2. 生成 Reality 密钥
-echo "[2/6] 生成 Reality 密钥..."
+echo "=== [2/6] 生成 Reality 密钥对 ==="
 REALITY_KEY=$(sing-box generate reality-keypair)
 PRIVATE_KEY=$(echo "$REALITY_KEY" | grep PrivateKey | awk '{print $2}')
 PUBLIC_KEY=$(echo "$REALITY_KEY" | grep PublicKey | awk '{print $2}')
 SHORT_ID=$(openssl rand -hex 8)
 
-# 3. 用户输入
-read -p "请输入你的 VLESS UUID: " UUID
-read -p "请输入伪装域名（如 cloudflare.com）: " SERVER_NAME
+read -p "请输入你的 UUID（可使用 https://uuidgenerator.net 生成）: " UUID
+read -p "请输入伪装域名（如 cloudflare.com、yahoo.com）: " SERVER_NAME
 SERVER_IP=$(curl -s https://api.ipify.org)
 
-# 4. 写入服务端配置文件
+echo "=== [3/6] 写入服务端配置 ==="
 mkdir -p /etc/sing-box
 
 cat > /etc/sing-box/config.json <<EOF
@@ -66,7 +60,26 @@ cat > /etc/sing-box/config.json <<EOF
 }
 EOF
 
-# 5. 写入客户端配置文件
+echo "=== [4/6] 配置 systemd 启动项 ==="
+cat > /etc/systemd/system/sing-box.service <<EOF
+[Unit]
+Description=sing-box service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/sing-box run -c /etc/sing-box/config.json
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable sing-box
+systemctl restart sing-box
+
+echo "=== [5/6] 创建客户端配置文件到 /root/client-config.json ==="
 cat > /root/client-config.json <<EOF
 {
   "log": {
@@ -113,36 +126,16 @@ cat > /root/client-config.json <<EOF
 }
 EOF
 
-# 6. 写入 systemd 启动服务
-cat > /etc/systemd/system/sing-box.service <<EOF
-[Unit]
-Description=sing-box service
-After=network.target
+echo "=== [6/6] 自动放行 443 端口（如有启用 ufw） ==="
+ufw allow 443 > /dev/null 2>&1 || echo "⚠️ 手动检查防火墙是否允许 443 端口"
 
-[Service]
-ExecStart=/usr/local/bin/sing-box run -c /etc/sing-box/config.json
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reexec
-systemctl daemon-reload
-systemctl enable sing-box
-systemctl restart sing-box
-
-# 7. 防火墙开放 443 端口
-ufw allow 443 > /dev/null 2>&1 || echo "⚠️ 请手动确保防火墙允许 443 端口"
-
-# 8. 输出连接信息
-echo "✅ Reality + sing-box 安装完成！以下是你的节点信息："
+echo "✅ 安装完成，以下是配置信息："
 echo "-------------------------------------------"
 echo "服务端 IP：$SERVER_IP"
 echo "UUID：$UUID"
-echo "Reality 公钥：$PUBLIC_KEY"
+echo "Reality 公钥（public_key）：$PUBLIC_KEY"
 echo "short_id：$SHORT_ID"
-echo "伪装域名（Server Name）：$SERVER_NAME"
-echo "客户端配置文件路径：/root/client-config.json"
-echo "下载命令：scp root@$SERVER_IP:/root/client-config.json ./"
+echo "伪装域名：$SERVER_NAME"
+echo "客户端配置已生成：/root/client-config.json"
+echo "下载命令示例：scp root@$SERVER_IP:/root/client-config.json ./"
 echo "-------------------------------------------"
