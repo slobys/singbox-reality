@@ -18,7 +18,7 @@ read -p "请输入你的 VLESS UUID: " UUID
 read -p "请输入伪装域名（如 cloudflare.com）: " SERVER_NAME
 
 # 获取公网 IP
-SERVER_IP=$(curl -s https://api.ip.sb/ip)
+SERVER_IP=$(curl -s https://api.ipify.org)
 
 # 写入服务端配置
 echo "[3/6] 写入服务端配置文件..."
