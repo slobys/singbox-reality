@@ -1,6 +1,6 @@
-# 一键安装Nginx Proxy Manager
+# 一键安装Sing-Box Reality+uTLS功能
 ## 脚本功能
-* 一键安装Nginx Proxy Manager（NPM反向代理）
+* 一键安装Sing-Box Reality+uTLS功能
 
 ## 安装git
 ### Debian和Ubuntu系统
